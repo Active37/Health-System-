@@ -1,0 +1,10 @@
+{
+  "name": "Nigerian Digital Hospital Portal",
+  "description": "Secure clinical platform for patients and Nigerian medical centers. Seamlessly manage clinical prescriptions, health history logs, biometric wearable charts, and locate real-time hospital and blood bank locations across Nigeria.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

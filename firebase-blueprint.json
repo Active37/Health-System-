@@ -1,0 +1,340 @@
+{
+  "entities": {
+    "Hospital": {
+      "title": "Hospital",
+      "description": "A registered hospital facility profile in Nigeria.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the hospital."
+        },
+        "address": {
+          "type": "string",
+          "description": "Full street address of the facility."
+        },
+        "state": {
+          "type": "string",
+          "description": "State in Nigeria."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["public", "private"],
+          "description": "Whether the facility is public or private."
+        },
+        "registeredBy": {
+          "type": "string",
+          "description": "User identifier of the administrator/doctor."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of registration."
+        }
+      },
+      "required": ["name", "address", "state", "type", "registeredBy", "createdAt"]
+    },
+    "Patient": {
+      "title": "Patient",
+      "description": "Patient medical record file.",
+      "type": "object",
+      "properties": {
+        "fullName": {
+          "type": "string",
+          "description": "The patient's legal name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The patient's contact email address."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Patient's phone number."
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "description": "Date of Birth (YYYY-MM-DD)."
+        },
+        "gender": {
+          "type": "string",
+          "description": "Gender of the patient."
+        },
+        "bloodGroup": {
+          "type": "string",
+          "description": "ABO and Rh blood typing."
+        },
+        "registeredByHospitalId": {
+          "type": "string",
+          "description": "The ID of the registering hospital."
+        },
+        "familyHistory": {
+          "type": "string",
+          "description": "Brief log of historic family conditions, allergies, or hereditary issues."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of database creation."
+        }
+      },
+      "required": ["fullName", "email", "phone", "dateOfBirth", "gender", "bloodGroup", "registeredByHospitalId", "createdAt"]
+    },
+    "Treatment": {
+      "title": "Treatment",
+      "description": "Record of standard medical treatments, notes, and operations.",
+      "type": "object",
+      "properties": {
+        "patientId": {
+          "type": "string",
+          "description": "Associated patient ID."
+        },
+        "hospitalId": {
+          "type": "string",
+          "description": "Hospital ID where the treatment took place."
+        },
+        "doctorName": {
+          "type": "string",
+          "description": "Attending clinical doctor's name."
+        },
+        "diagnosis": {
+          "type": "string",
+          "description": "The primary clinical diagnosis."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Exhaustive treatment and therapy clinical notes."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of entry."
+        }
+      },
+      "required": ["patientId", "hospitalId", "doctorName", "diagnosis", "notes", "createdAt"]
+    },
+    "Prescription": {
+      "title": "Prescription",
+      "description": "Drug prescriptions dispensed or assigned by doctors to patients.",
+      "type": "object",
+      "properties": {
+        "patientId": {
+          "type": "string",
+          "description": "Associated patient ID."
+        },
+        "hospitalId": {
+          "type": "string",
+          "description": "Authorizing hospital center ID."
+        },
+        "doctorName": {
+          "type": "string",
+          "description": "Physician prescribing the health drugs."
+        },
+        "drugName": {
+          "type": "string",
+          "description": "Name of the prescribed chemical drug."
+        },
+        "dosage": {
+          "type": "string",
+          "description": "Dose information (e.g., 2 tablets daily)."
+        },
+        "instructions": {
+          "type": "string",
+          "description": "Optional administrative guidance (e.g., after meals)."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "completed"],
+          "description": "Status of the clinical prescription."
+        },
+        "prescribedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the prescription was authorized."
+        }
+      },
+      "required": ["patientId", "hospitalId", "doctorName", "drugName", "dosage", "status", "prescribedAt"]
+    },
+    "HealthLog": {
+      "title": "HealthLog",
+      "description": "Track historical patient biometric trend stats (weight and heart rate logs).",
+      "type": "object",
+      "properties": {
+        "patientId": {
+          "type": "string",
+          "description": "Associated patient ID."
+        },
+        "loggedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO database timestamp of recording."
+        },
+        "weight": {
+          "type": "number",
+          "description": "Patient weight in kilograms."
+        },
+        "heartRate": {
+          "type": "number",
+          "description": "Patient pulse rate in beats per minute."
+        }
+      },
+      "required": ["patientId", "loggedAt", "weight", "heartRate"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Clinical consultation bookings scheduled by patients.",
+      "type": "object",
+      "properties": {
+        "patientId": {
+          "type": "string",
+          "description": "Associated patient ID."
+        },
+        "hospitalId": {
+          "type": "string",
+          "description": "The scheduled clinical facility center ID."
+        },
+        "appointmentDate": {
+          "type": "string",
+          "description": "Consultation date (YYYY-MM-DD)."
+        },
+        "appointmentTime": {
+          "type": "string",
+          "description": "Consultation schedule time."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Patient description of consult requirements."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected", "completed"],
+          "description": "Process state of scheduled appointment."
+        },
+        "doctorNotes": {
+          "type": "string",
+          "description": "Optional administrative/clinical comments from attending physician."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp."
+        }
+      },
+      "required": ["patientId", "hospitalId", "appointmentDate", "appointmentTime", "reason", "status", "createdAt"]
+    },
+    "CaregiverInvite": {
+      "title": "CaregiverInvite",
+      "description": "Caregiver invitations issued by patients for automated alerts.",
+      "type": "object",
+      "properties": {
+        "patientId": {
+          "type": "string",
+          "description": "Inviting patient ID."
+        },
+        "email": {
+          "type": "string",
+          "description": "Caregiver contact email."
+        },
+        "name": {
+          "type": "string",
+          "description": "Caregiver full name."
+        },
+        "relationship": {
+          "type": "string",
+          "description": "Relationship to patient."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved"],
+          "description": "Approval status of invitation."
+        },
+        "notifyMissedDose": {
+          "type": "boolean",
+          "description": "Whether to alert on missed doses."
+        },
+        "notifyVitalSpike": {
+          "type": "boolean",
+          "description": "Whether to alert on vital spikes."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp."
+        }
+      },
+      "required": ["patientId", "email", "name", "relationship", "status", "notifyMissedDose", "notifyVitalSpike", "createdAt"]
+    },
+    "CaregiverAlert": {
+      "title": "CaregiverAlert",
+      "description": "Automated security alerts sent to caregivers on behalf of a patient.",
+      "type": "object",
+      "properties": {
+        "patientId": {
+          "type": "string",
+          "description": "Patient ID trigger."
+        },
+        "caregiverEmail": {
+          "type": "string",
+          "description": "Target caregiver email address."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["missed_dose", "vital_spike"],
+          "description": "Type of automated notification."
+        },
+        "message": {
+          "type": "string",
+          "description": "Warning message description."
+        },
+        "patientName": {
+          "type": "string",
+          "description": "Patient's name."
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["critical", "warning"],
+          "description": "Severity level."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Alert occurrence timestamp."
+        }
+      },
+      "required": ["patientId", "caregiverEmail", "type", "message", "patientName", "severity", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/hospitals/{hospitalId}": {
+      "schema": "Hospital",
+      "description": "Collection of clinical hospital profiles registered in Nigeria."
+    },
+    "/patients/{patientId}": {
+      "schema": "Patient",
+      "description": "Collection of registered clinical or personal health profiles."
+    },
+    "/treatments/{treatmentId}": {
+      "schema": "Treatment",
+      "description": "Collection of treatment diagnosis entries for historic safety and recall."
+    },
+    "/prescriptions/{prescriptionId}": {
+      "schema": "Prescription",
+      "description": "Collection of prescribed healthcare drugs accessible by patients."
+    },
+    "/healthLogs/{logId}": {
+      "schema": "HealthLog",
+      "description": "Collection of historic biometrics (weight and heart rate Trend) logs."
+    },
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "Collection of clinical consultation bookings scheduled by patients."
+    },
+    "/caregiverInvites/{inviteId}": {
+      "schema": "CaregiverInvite",
+      "description": "Collection of caregiver invitations issued by patients."
+    },
+    "/caregiverAlerts/{alertId}": {
+      "schema": "CaregiverAlert",
+      "description": "Collection of automated alerts dispatched to caregivers."
+    }
+  }
+}

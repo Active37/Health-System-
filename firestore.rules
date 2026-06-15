@@ -1,0 +1,181 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Catch-all default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    // Entity helper checkers
+    function isValidHospital(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 200
+        && data.address is string && data.address.size() > 0 && data.address.size() <= 500
+        && data.state is string && data.state.size() > 0 && data.state.size() <= 100
+        && data.type is string && (data.type == 'public' || data.type == 'private')
+        && data.registeredBy == request.auth.uid;
+    }
+
+    function isValidPatient(data) {
+      return data.fullName is string && data.fullName.size() > 0 && data.fullName.size() <= 200
+        && data.email is string && data.email.size() > 0 && data.email.size() <= 200
+        && data.phone is string && data.phone.size() > 0 && data.phone.size() <= 50
+        && data.dateOfBirth is string && data.dateOfBirth.size() == 10
+        && data.gender is string && data.gender.size() <= 20
+        && data.bloodGroup is string && data.bloodGroup.size() <= 10
+        && data.registeredByHospitalId is string;
+    }
+
+    function isValidTreatment(data) {
+      return data.patientId is string && data.patientId.size() <= 128
+        && data.hospitalId is string && data.hospitalId.size() <= 128
+        && data.doctorName is string && data.doctorName.size() > 0 && data.doctorName.size() <= 200
+        && data.diagnosis is string && data.diagnosis.size() > 0 && data.diagnosis.size() <= 500
+        && data.notes is string && data.notes.size() <= 10000;
+    }
+
+    function isValidPrescription(data) {
+      return data.patientId is string && data.patientId.size() <= 128
+        && data.hospitalId is string && data.hospitalId.size() <= 128
+        && data.doctorName is string && data.doctorName.size() > 0 && data.doctorName.size() <= 200
+        && data.drugName is string && data.drugName.size() > 0 && data.drugName.size() <= 200
+        && data.dosage is string && data.dosage.size() > 0 && data.dosage.size() <= 200
+        && data.status is string && (data.status == 'active' || data.status == 'completed');
+    }
+
+    function isValidHealthLog(data) {
+      return data.patientId is string && data.patientId.size() <= 128
+        && data.weight is number && data.weight > 0 && data.weight < 500
+        && data.heartRate is number && data.heartRate > 0 && data.heartRate < 300;
+    }
+
+    function isValidAppointment(data) {
+      return data.patientId is string && data.patientId.size() <= 128
+        && data.hospitalId is string && data.hospitalId.size() <= 128
+        && data.appointmentDate is string && data.appointmentDate.size() <= 50
+        && data.appointmentTime is string && data.appointmentTime.size() <= 50
+        && data.reason is string && data.reason.size() <= 1000
+        && data.status is string && (data.status == 'pending' || data.status == 'approved' || data.status == 'rejected' || data.status == 'completed');
+    }
+
+    function isValidCaregiverInvite(data) {
+      return data.patientId is string && data.patientId.size() <= 128
+        && data.email is string && data.email.size() <= 128
+        && data.name is string && data.name.size() <= 128
+        && data.relationship is string && data.relationship.size() <= 128
+        && data.status is string && (data.status == 'pending' || data.status == 'approved')
+        && data.notifyMissedDose is bool
+        && data.notifyVitalSpike is bool;
+    }
+
+    function isValidCaregiverAlert(data) {
+      return data.patientId is string && data.patientId.size() <= 128
+        && data.caregiverEmail is string && data.caregiverEmail.size() <= 128
+        && data.type is string && (data.type == 'missed_dose' || data.type == 'vital_spike')
+        && data.message is string && data.message.size() <= 1000
+        && data.patientName is string && data.patientName.size() <= 128
+        && data.severity is string && (data.severity == 'critical' || data.severity == 'warning');
+    }
+
+    // Match blocks
+    match /hospitals/{hospitalId} {
+      allow create: if isVerifiedUser() && isValidId(hospitalId) && isValidHospital(request.resource.data);
+      allow read: if isSignedIn();
+      allow update: if isVerifiedUser() && isValidId(hospitalId) && isValidHospital(request.resource.data)
+        && request.resource.data.registeredBy == resource.data.registeredBy;
+      allow delete: if false;
+    }
+
+    match /patients/{patientId} {
+      allow create: if isVerifiedUser() && isValidId(patientId) && isValidPatient(request.resource.data);
+      allow read: if isSignedIn() && (
+        request.auth.token.email == resource.data.email ||
+        exists(/databases/$(database)/documents/hospitals/$(resource.data.registeredByHospitalId))
+      );
+      allow update: if isVerifiedUser() && isValidId(patientId) && isValidPatient(request.resource.data)
+        && resource.data.registeredByHospitalId == request.resource.data.registeredByHospitalId;
+      allow delete: if false;
+    }
+
+    match /treatments/{treatmentId} {
+      allow create: if isVerifiedUser() && isValidId(treatmentId) && isValidTreatment(request.resource.data);
+      allow read: if isSignedIn() && (
+        request.auth.token.email == get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.email ||
+        exists(/databases/$(database)/documents/hospitals/$(resource.data.hospitalId))
+      );
+      allow update: if isVerifiedUser() && isValidId(treatmentId) && isValidTreatment(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /prescriptions/{prescriptionId} {
+      allow create: if isVerifiedUser() && isValidId(prescriptionId) && isValidPrescription(request.resource.data);
+      allow read: if isSignedIn() && (
+        request.auth.token.email == get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.email ||
+        exists(/databases/$(database)/documents/hospitals/$(resource.data.hospitalId))
+      );
+      allow update: if isVerifiedUser() && isValidId(prescriptionId) && isValidPrescription(request.resource.data)
+        && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
+      allow delete: if false;
+    }
+
+    match /healthLogs/{logId} {
+      allow create: if isVerifiedUser() && isValidId(logId) && isValidHealthLog(request.resource.data);
+      allow read: if isSignedIn();
+      allow update: if isVerifiedUser() && isValidId(logId) && isValidHealthLog(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /appointments/{appointmentId} {
+      allow create: if isVerifiedUser() && isValidId(appointmentId) && isValidAppointment(request.resource.data);
+      allow read: if isSignedIn() && (
+        request.auth.token.email == get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.email ||
+        exists(/databases/$(database)/documents/hospitals/$(resource.data.hospitalId))
+      );
+      allow update: if isVerifiedUser() && isValidId(appointmentId) && isValidAppointment(request.resource.data)
+        && (
+          // Doctor approving or managing status
+          (exists(/databases/$(database)/documents/hospitals/$(resource.data.hospitalId)) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'doctorNotes'])) ||
+          // Patient cancelling or editing pending dates
+          (request.auth.token.email == get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.email && resource.data.status == 'pending' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['appointmentDate', 'appointmentTime', 'reason', 'status']))
+        );
+      allow delete: if false;
+    }
+
+    match /caregiverInvites/{inviteId} {
+      allow create: if isVerifiedUser() && isValidId(inviteId) && isValidCaregiverInvite(request.resource.data);
+      allow read: if isSignedIn() && (
+        request.auth.token.email == get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.email ||
+        request.auth.token.email == resource.data.email
+      );
+      allow update: if isVerifiedUser() && isValidId(inviteId) && isValidCaregiverInvite(request.resource.data)
+        && (
+          (request.auth.token.email == get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.email && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'notifyMissedDose', 'notifyVitalSpike'])) ||
+          (request.auth.token.email == resource.data.email && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
+        );
+      allow delete: if isSignedIn() && request.auth.token.email == get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.email;
+    }
+
+    match /caregiverAlerts/{alertId} {
+      allow create: if isVerifiedUser() && isValidId(alertId) && isValidCaregiverAlert(request.resource.data);
+      allow read: if isSignedIn() && (
+        request.auth.token.email == resource.data.caregiverEmail ||
+        request.auth.token.email == get(/databases/$(database)/documents/patients/$(resource.data.patientId)).data.email
+      );
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}
